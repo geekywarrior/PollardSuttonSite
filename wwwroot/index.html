@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pollard vs Sutton - 2026 Half PPR</title>
+  <style>body { visibility: hidden }</style>
+  <noscript><style>body { visibility: visible; }</style></noscript>
+  <link rel="stylesheet" href="theme/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="theme/dist/css/bootstrap-theme.min.css">
+  <script>_386 = { onePass: true };</script>
+  <style>
+    .winner { font-weight: bold; }
+    .big { display: block; font-size: 3em; line-height: 1.4; padding: 10px 0; overflow: visible; }
+    .panel-body p { line-height: 1.5; }
+    @media (min-width: 768px) {
+      .cards { display: flex; }
+      .cards:before, .cards:after { display: none; }
+      .cards > [class*="col-"] { display: flex; }
+      .cards .panel { flex: 1; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1>POLLARD vs SUTTON <small id="subtitle">half-PPR fantasy stats</small></h1>
+  </div>
+
+  <div id="content"></div>
+
+  <p class="text-muted" id="footer">
+    Scoring: 0.5 pts per reception, 0.1 per yard, 6 per TD, -2 per fumble lost. Data: ESPN game logs.
+  </p>
+</div>
+
+<script id="stats-data" type="application/json"></script>
+<script>
+(function () {
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function pts(n) { return n.toFixed(1); }
+
+  function gameLine(g) {
+    var parts = [];
+    if (g.rushAtt > 0) parts.push(g.rushAtt + ' att, ' + g.rushYds + ' yds');
+    if (g.rec > 0 || g.tgt > 0) parts.push(g.rec + '/' + g.tgt + ' rec, ' + g.recYds + ' yds');
+    var tds = g.rushTd + g.recTd;
+    if (tds > 0) parts.push(tds === 1 ? 'TD' : tds + ' TD');
+    return (g.away ? '@' : '') + g.opponent + ': ' + (parts.join(', ') || 'no stats');
+  }
+
+  function card(p) {
+    var lines = [];
+    if (p.rushAtt > 0) lines.push(p.rushAtt + ' att &middot; ' + p.rushYds + ' yds &middot; ' + p.rushTd + ' TD');
+    lines.push(p.rec + ' rec / ' + p.tgt + ' tgt &middot; ' + p.recYds + ' yds' + (p.rushAtt > 0 && p.recTd === 0 ? '' : ' &middot; ' + p.recTd + ' TD'));
+    return '<div class="col-sm-6"><div class="panel panel-default">' +
+      '<div class="panel-heading"><h3 class="panel-title">' + esc(p.name) + ' &mdash; ' + esc(p.position) + ', ' + esc(p.team) + '</h3></div>' +
+      '<div class="panel-body text-center">' +
+      '<div class="big">' + pts(p.totalPoints) + '</div>' +
+      '<p>total pts &middot; ' + pts(p.pointsPerGame) + ' per game</p>' +
+      '<p>' + lines.join('<br>') + '</p>' +
+      '</div></div></div>';
+  }
+
+  function render(data) {
+    var a = data.players[0], b = data.players[1];
+    document.getElementById('subtitle').textContent = data.season + ' half-PPR fantasy stats, through week ' +
+      Math.max.apply(null, a.games.concat(b.games).map(function (g) { return g.week; }).concat([0]));
+
+    var weeks = {};
+    a.games.concat(b.games).forEach(function (g) { weeks[g.week] = true; });
+    weeks = Object.keys(weeks).map(Number).sort(function (x, y) { return x - y; });
+
+    var aWins = 0, bWins = 0, rows = '';
+    weeks.forEach(function (w) {
+      var ga = a.games.filter(function (g) { return g.week === w; })[0];
+      var gb = b.games.filter(function (g) { return g.week === w; })[0];
+      var winner = '';
+      if (ga && gb) {
+        if (ga.points > gb.points) { aWins++; winner = a.name.split(' ')[1]; }
+        else if (gb.points > ga.points) { bWins++; winner = b.name.split(' ')[1]; }
+        else winner = 'Tie';
+      }
+      rows += '<tr><td>' + w + '</td>' +
+        '<td>' + (ga ? pts(ga.points) : '-') + '</td><td>' + (ga ? esc(gameLine(ga)) : 'BYE / DNP') + '</td>' +
+        '<td>' + (gb ? pts(gb.points) : '-') + '</td><td>' + (gb ? esc(gameLine(gb)) : 'BYE / DNP') + '</td>' +
+        '<td class="winner">' + esc(winner) + '</td></tr>';
+    });
+
+    var diff = Math.abs(a.totalPoints - b.totalPoints);
+    var leader = a.totalPoints >= b.totalPoints ? a : b;
+    var leaderWins = leader === a ? aWins : bWins;
+    var played = aWins + bWins;
+    var verdict = a.totalPoints === b.totalPoints
+      ? 'Dead even on the season.'
+      : leader.name.split(' ')[1] + ' leads by ' + pts(diff) + ' points and wins ' + leaderWins + ' of ' + played + ' head-to-head weeks.';
+
+    document.getElementById('content').innerHTML =
+      '<div class="row cards">' + card(a) + card(b) + '</div>' +
+      '<h2>Week by week</h2>' +
+      '<table class="table table-bordered table-striped"><thead><tr>' +
+      '<th>Week</th><th>' + esc(a.name.split(' ')[1]) + '</th><th>' + esc(a.name.split(' ')[1]) + ' line</th>' +
+      '<th>' + esc(b.name.split(' ')[1]) + '</th><th>' + esc(b.name.split(' ')[1]) + ' line</th><th>Winner</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '<tfoot><tr><th>Total</th><th>' + pts(a.totalPoints) + '</th><th></th><th>' + pts(b.totalPoints) + '</th><th></th>' +
+      '<th>' + (diff === 0 ? 'Tie' : esc(leader.name.split(' ')[1]) + ' +' + pts(diff)) + '</th></tr></tfoot></table>' +
+      '<div class="alert alert-info"><strong>VERDICT:</strong> ' + esc(verdict) + '</div>';
+
+    var updated = new Date(data.updatedUtc).toLocaleString();
+    document.getElementById('footer').textContent += ' Last updated ' + updated + '.';
+  }
+
+  function showError() {
+    document.getElementById('content').innerHTML =
+      '<div class="alert alert-warning">Stats are not available yet. Try again in a minute.</div>';
+  }
+
+  // The theme animates whatever is in the DOM when it loads, so render first, then load it.
+  function loadScript(src, done) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = done;
+    document.body.appendChild(s);
+  }
+  function startTheme() {
+    loadScript('https://code.jquery.com/jquery-1.12.4.min.js', function () {
+      loadScript('theme/dist/js/bootstrap.min.js');
+    });
+  }
+
+  // The static generator bakes the stats into #stats-data; the .NET app leaves it empty and serves /api/stats.
+  function loadData() {
+    var el = document.getElementById('stats-data');
+    var text = el && el.textContent.trim();
+    if (text) return Promise.resolve(JSON.parse(text));
+    return fetch('api/stats').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+
+  loadData()
+    .then(render)
+    .catch(showError)
+    .then(startTheme);
+})();
+</script>
+</body>
+</html>
