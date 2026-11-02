@@ -5,18 +5,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>PollardSuttonSite.Generator</RootNamespace>
+    <RootNamespace>PollardSuttonSite</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-
-  <!-- Share the ESPN client, scoring and models with the web app. -->
-  <ItemGroup>
-    <Compile Include="..\Models.cs" />
-    <Compile Include="..\StatsOptions.cs" />
-    <Compile Include="..\EspnStatsClient.cs" />
   </ItemGroup>
 
 </Project>

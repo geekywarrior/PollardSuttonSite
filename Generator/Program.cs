@@ -52,9 +52,9 @@ static string FindProjectRoot()
 {
     foreach (var start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
         for (var dir = new DirectoryInfo(start); dir != null; dir = dir.Parent)
-            if (File.Exists(Path.Combine(dir.FullName, "PollardSuttonSite.csproj")))
+            if (File.Exists(Path.Combine(dir.FullName, "Generator", "Generator.csproj")))
                 return dir.FullName;
-    throw new DirectoryNotFoundException("Could not find PollardSuttonSite.csproj above the current directory.");
+    throw new DirectoryNotFoundException("Could not find the repo root (the folder containing Generator/Generator.csproj).");
 }
 
 static void CopyDirectory(string source, string target)

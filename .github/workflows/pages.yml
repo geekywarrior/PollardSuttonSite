@@ -2,7 +2,10 @@ name: Build and deploy site
 
 on:
   schedule:
-    - cron: "0 11,23 * * *"   # twice a day, UTC
+    # GitHub cron is UTC only. EST = UTC-5 (EDT, UTC-4, ended Nov 1 2026).
+    - cron: "0 11 * * 5"    # Friday 6:00 AM EST
+    - cron: "45 4 * * 1"    # Sunday 11:45 PM EST = Monday 04:45 UTC
+    - cron: "0 11 * * 2"    # Tuesday 6:00 AM EST
   workflow_dispatch:
   push:
     branches: [main]

@@ -132,12 +132,10 @@
     });
   }
 
-  // The static generator bakes the stats into #stats-data; the .NET app leaves it empty and serves /api/stats.
+  // The generator bakes the stats into #stats-data.
   function loadData() {
-    var el = document.getElementById('stats-data');
-    var text = el && el.textContent.trim();
-    if (text) return Promise.resolve(JSON.parse(text));
-    return fetch('api/stats').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+    var text = document.getElementById('stats-data').textContent.trim();
+    return text ? Promise.resolve(JSON.parse(text)) : Promise.reject(new Error('no stats'));
   }
 
   loadData()
